@@ -14,7 +14,8 @@ After all analysis is complete, produce a document the user can actually act on.
 ## Input
 
 - Idea slug
-- `memory/ideas/<slug>/scores.json` (required — includes RAT)
+- `memory/ideas/<slug>/scores.json` (required — includes RAT and `feasibility_gate`)
+- `memory/ideas/<slug>/feasibility.json` (if available — build/compliance/infra-cost constraints)
 - `memory/ideas/<slug>/weaknesses.json` (if available)
 - `memory/ideas/<slug>/pivot_options.json` (if available and verdict is "pivot")
 - All other available dimension files in `memory/ideas/<slug>/`
@@ -37,6 +38,7 @@ The memo must be **scannable in under 2 minutes**. Follow these rules:
 | Verdict line | 1 sentence | Instant signal |
 | Score + confidence | 1 line | Quantitative anchor |
 | Validation watermark | 1–2 lines | Trust calibration (only if confidence < high) |
+| Feasibility flag | 1 line | Build/compliance blocker + cheapest compliant path + its cost (only if the feasibility gate fired) |
 | Top 3 Strengths | 1 sentence each, with one data point | What's working |
 | Top 3 Risks | 2 sentences each: the risk + what happens if ignored | What kills it |
 | Riskiest Assumption | 3–5 sentences | The one thing to test before building anything |
@@ -53,6 +55,7 @@ Total memo length: **~400–600 words**. If it's longer, cut. Brevity is a featu
 2. Check `score_confidence`. If "low", compose a validation watermark (see below).
 3. Identify the 3 highest-scoring dimensions → strengths. For each, pull one concrete data point from the source file (e.g., "k-factor estimated at 0.6" not "good viral potential").
 4. Identify the 3 lowest-scoring dimensions → risks. For each, describe what goes wrong if ignored. If `weaknesses.json` exists, use its `root_cause_type` and `failure_mode` to add specificity.
+   - **Feasibility override:** if `scores.json.feasibility_gate.applied` is true or `feasibility.json.viability_killer` is true, this is **Risk #1** regardless of its weighted score. State the blocking factor (e.g., sensitive data forbids a public-API build), the cheapest compliant path from `feasibility.json`, and its monthly/upfront cost. A founder must never build toward something they cannot legally operate or afford to run — and they should know the affordable compliant path if one exists.
 5. Extract the RAT from `scores.json.riskiest_assumption_test`. Frame it as the one question to answer before writing a line of code.
 6. Run a **pre-mortem**: assume the idea failed 12 months from now. Write 3 most likely causes of death based on the risk profile.
 7. Compose the recommended next step:
@@ -102,6 +105,8 @@ created_at: ""
 **Score: X/100** | Confidence: <high / medium / low>
 
 <Validation watermark — only if confidence is medium or low>
+
+<Feasibility flag — only if the feasibility gate fired. One line: the build/compliance blocker + the cheapest compliant path + its cost. e.g. "⚠️ Operating constraint: handles patient data → cannot use a public LLM API; cheapest compliant build is an EU-region managed model + DPA (~$$/mo), not self-hosted GPUs.">
 
 ---
 

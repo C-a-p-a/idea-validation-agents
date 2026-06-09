@@ -40,6 +40,7 @@ Skills communicate state through `memory/`. The orchestrator (Claude / Codex / C
 | `cac-modeler` | Model CAC by channel | `memory/ideas/<slug>/cac.json` |
 | `tam-sam-som-builder` | Estimate market size | `memory/ideas/<slug>/market_size.json` |
 | `distribution-analysis` | Evaluate distribution options | `memory/ideas/<slug>/distribution.json` |
+| `feasibility-compliance` | Assess build/compliance/infra feasibility vs founder budget | `memory/ideas/<slug>/feasibility.json` |
 | `retention-predictor` | Predict retention and churn | `memory/ideas/<slug>/retention.json` |
 | `pivot-engine` | Generate pivot options | `memory/ideas/<slug>/pivot_options.json` |
 | `idea-scoring` | Score idea across all dimensions | `memory/ideas/<slug>/scores.json` |

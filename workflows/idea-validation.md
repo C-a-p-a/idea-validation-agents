@@ -47,32 +47,37 @@ User expresses one of:
    ↓ writes: memory/ideas/<slug>/desire_scores.json
    → present: State the primary desire driver, desire strength label, and virality potential. Full scores at memory/ideas/<slug>/desire_scores.json
 
-4. pricing-and-wtp
-   ↓ reads: memory/ideas/<slug>/user_extraction.json, memory/ideas/<slug>/competitors.json, memory/ideas/<slug>/desire_scores.json, memory/market_insights/<niche>-<platform>-<YYYY>-<MM>.md (one file per platform)
-   ↓ writes: memory/ideas/<slug>/pricing.json
-   → present: State the recommended pricing model, target WTP range, and estimated freemium conversion rate. Full model at memory/ideas/<slug>/pricing.json
+4. feasibility-compliance
+   ↓ reads: memory/ideas/<slug>/idea.md, memory/user_profile.md, memory/ideas/<slug>/competitors.json (if present)
+   ↓ writes: memory/ideas/<slug>/feasibility.json
+   → present: State the feasibility verdict, the cheapest compliant hosting/infra path with rough monthly/upfront cost, and whether any factor is a viability-killer. **Fail-fast:** if viability_killer = true, flag it loudly and offer to stop or reframe/pivot BEFORE running steps 5–10 — no point modeling pricing and CAC for something that cannot be built or legally operated.
 
-5. distribution-analysis
+5. pricing-and-wtp
+   ↓ reads: memory/ideas/<slug>/user_extraction.json, memory/ideas/<slug>/competitors.json, memory/ideas/<slug>/desire_scores.json, memory/ideas/<slug>/feasibility.json, memory/market_insights/<niche>-<platform>-<YYYY>-<MM>.md (one file per platform)
+   ↓ writes: memory/ideas/<slug>/pricing.json
+   → present: State the recommended pricing model, target WTP range, and estimated freemium conversion rate. Subtract the cheapest-compliant-path opex from margins. Full model at memory/ideas/<slug>/pricing.json
+
+6. distribution-analysis
    ↓ reads: memory/user_profile.md (if present), memory/ideas/<slug>/idea.md, memory/market_insights/<niche>-<platform>-<YYYY>-<MM>.md (one file per platform)
    ↓ writes: memory/ideas/<slug>/distribution.json
    → present: State the distribution verdict, recommended first acquisition channel, and whether a viral loop exists. Full analysis at memory/ideas/<slug>/distribution.json
 
-6. retention-predictor
+7. retention-predictor
    ↓ reads: memory/ideas/<slug>/desire_scores.json, memory/ideas/<slug>/user_extraction.json
    ↓ writes: memory/ideas/<slug>/retention.json
    → present: State the retention verdict, natural usage frequency, and top churn risk factor. Full prediction at memory/ideas/<slug>/retention.json
 
-7. cac-modeler
-    ↓ reads: memory/user_profile.md (if present), memory/ideas/<slug>/pricing.json, memory/ideas/<slug>/distribution.json
+8. cac-modeler
+    ↓ reads: memory/user_profile.md (if present), memory/ideas/<slug>/pricing.json, memory/ideas/<slug>/distribution.json, memory/ideas/<slug>/feasibility.json
     ↓ writes: memory/ideas/<slug>/cac.json
     → present: State the viability verdict, LTV:CAC ratio for the recommended channel, and payback period in months. Full model at memory/ideas/<slug>/cac.json
 
-8. idea-scoring
-    ↓ reads: memory/ideas/<slug>/weighted_signals.json, competitors.json, pricing.json, distribution.json, retention.json, desire_scores.json, cac.json
+9. idea-scoring
+    ↓ reads: memory/ideas/<slug>/weighted_signals.json, competitors.json, pricing.json, distribution.json, retention.json, desire_scores.json, cac.json, feasibility.json
     ↓ writes: memory/ideas/<slug>/scores.json
-    → present: Show the final score (X/100), verdict, top strength, and top weakness. Full breakdown at memory/ideas/<slug>/scores.json
+    → present: Show the final score (X/100), verdict, top strength, and top weakness. If the feasibility gate fired, say so. Full breakdown at memory/ideas/<slug>/scores.json
 
-9. decision-memo
+10. decision-memo
     ↓ reads: memory/ideas/<slug>/scores.json + all dimension files
     ↓ writes: memory/ideas/<slug>/decision_memo.md
     → present: Share the complete decision memo in full. File also saved at memory/ideas/<slug>/decision_memo.md
@@ -84,11 +89,12 @@ User expresses one of:
 |---|---|---|
 | competitor-mapper | `idea.md` | `competitors.json` |
 | desire-evaluator | `user_extraction.json` (opt), `idea.md` | `desire_scores.json` |
-| pricing-and-wtp | `user_extraction.json`, `competitors.json`, `desire_scores.json` | `pricing.json` |
+| feasibility-compliance | `idea.md`, `user_profile.md`, `competitors.json` (opt) | `feasibility.json` |
+| pricing-and-wtp | `user_extraction.json`, `competitors.json`, `desire_scores.json`, `feasibility.json` | `pricing.json` |
 | distribution-analysis | `user_profile.md`, `idea.md` | `distribution.json` |
 | retention-predictor | `desire_scores.json`, `user_extraction.json` | `retention.json` |
-| cac-modeler | `user_profile.md`, `pricing.json`, `distribution.json` | `cac.json` |
-| idea-scoring | `weighted_signals.json`, `competitors.json`, `pricing.json`, `distribution.json`, `retention.json`, `desire_scores.json`, `cac.json` | `scores.json` |
+| cac-modeler | `user_profile.md`, `pricing.json`, `distribution.json`, `feasibility.json` | `cac.json` |
+| idea-scoring | `weighted_signals.json`, `competitors.json`, `pricing.json`, `distribution.json`, `retention.json`, `desire_scores.json`, `cac.json`, `feasibility.json` | `scores.json` |
 | decision-memo | `scores.json` + all dimension files | `decision_memo.md` |
 
 ## Exit Output

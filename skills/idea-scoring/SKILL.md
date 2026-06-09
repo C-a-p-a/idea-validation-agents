@@ -24,6 +24,7 @@ Produce a single, defensible verdict on an idea by aggregating all available dim
   - `memory/ideas/<slug>/distribution.json`
   - `memory/ideas/<slug>/retention.json`
   - `memory/ideas/<slug>/complexity.json`
+  - `memory/ideas/<slug>/feasibility.json`
   - `memory/ideas/<slug>/weighted_signals.json`
 - Optional: `memory/user_profile.md` (for founder-market fit)
 
@@ -37,10 +38,11 @@ At least **3 of 7 dimensions** must have source data. If fewer are available, re
 |---|---|---|---|
 | Demand | 20% | `desire_scores.json` + `weighted_signals.json` + `idea.md` | Real human desire + validated market signals |
 | Competition | 10% | `competitors.json` | Positioning gaps and defensibility |
-| Monetization | 20% | `pricing.json` + `cac.json` + `market_size.json` | Unit economics viability (LTV:CAC, WTP, market size) |
-| Distribution | 20% | `distribution.json` | Organic reach, paid viability, founder edge |
-| Retention | 15% | `retention.json` | Habit formation, churn risk, usage frequency |
-| Founder-Market Fit | 15% | `user_profile.md` + domain overlap with idea | Builder's edge, domain expertise, distribution advantage |
+| Monetization | 18% | `pricing.json` + `cac.json` + `market_size.json` | Unit economics viability (LTV:CAC, WTP, market size) |
+| Distribution | 18% | `distribution.json` | Organic reach, paid viability, founder edge |
+| Retention | 12% | `retention.json` | Habit formation, churn risk, usage frequency |
+| Founder-Market Fit | 12% | `user_profile.md` + domain overlap with idea | Builder's edge, domain expertise, distribution advantage |
+| Feasibility | 10% | `feasibility.json` | Build/operational viability: data-sensitivity & compliance, required hosting/infra cost vs budget, gating dependencies |
 
 ## Dimension Score Mapping
 
@@ -118,6 +120,19 @@ Adjust: +5 if natural_usage_frequency is daily. -10 if weekly-or-less with no ex
 
 If `user_profile.md` is unavailable, default to 50 (neutral) and flag as missing.
 
+### Feasibility (0–100)
+
+Higher = more buildable/operable for *this* founder. Source: `feasibility.json`.
+
+| Condition | Score range |
+|---|---|
+| `feasibility_verdict` = "feasible" | 80–100 |
+| `feasibility_verdict` = "feasible-with-constraints" AND `infra_cost_vs_budget` = "within" | 55–79 |
+| `feasibility_verdict` = "capital-intensive" OR `infra_cost_vs_budget` = "stretch" | 25–54 |
+| `feasibility_verdict` = "infeasible-for-indie" OR `viability_killer` = true | 0–24 |
+
+If `feasibility.json` is unavailable, default to 60 (mildly optimistic neutral) and flag as missing — but never issue a "pursue" verdict without it for ideas touching sensitive data, regulated sectors, or heavy infrastructure.
+
 ## Scoring Algorithm
 
 ### Step 1 — Compute dimension sub-scores
@@ -143,10 +158,11 @@ This multiplicative penalty means a single catastrophic weakness (score 0–10) 
 weights = {
     demand: 0.20,
     competition: 0.10,
-    monetization: 0.20,
-    distribution: 0.20,
-    retention: 0.15,
-    founder_market_fit: 0.15
+    monetization: 0.18,
+    distribution: 0.18,
+    retention: 0.12,
+    founder_market_fit: 0.12,
+    feasibility: 0.10
 }
 
 base_score = sum(d_i * w_i for each dimension)
@@ -178,6 +194,15 @@ The missing-input discount ensures that ideas scored on only 3 of 7 dimensions c
 | 55–74 | **test** | Promising but unproven. Run the RAT experiment first. |
 | 35–54 | **pivot** | Structural weakness. Use pivot-engine to explore alternatives. |
 | 0–34 | **drop** | Fatal flaws. Move to next idea. |
+
+### Feasibility hard gate (overrides the verdict)
+
+The weighted score alone can let a strong market drown out a fatal build/compliance problem. To prevent that, apply this gate **after** computing the verdict from the table above, using `feasibility.json`:
+
+- If `viability_killer` = true → cap the verdict at **pivot** (or **drop** if `final_score` < 35). The idea cannot be built/operated as framed by this founder; the only honest verdicts are "change the framing" or "stop."
+- If `feasibility_verdict` = "capital-intensive" AND the founder is below growth tier → cap the verdict at **test**, and make the feasibility/cost question the Riskiest Assumption.
+
+Record the gate's effect in `feasibility_gate` (below) so the decision-memo can explain it. A gate that fires is not a footnote — it is usually the single most important thing about the idea.
 
 ## Riskiest Assumption Test (RAT)
 
@@ -236,7 +261,7 @@ Define the threshold **before** running the experiment. The threshold is written
 5. Compute `base_score` using weighted sum.
 6. Apply `floor_penalty` and `missing_discount` to get `final_score`.
 7. Determine `score_confidence`.
-8. Issue `verdict` from threshold table.
+8. Issue `verdict` from threshold table, then apply the **feasibility hard gate**: if `feasibility.json.viability_killer` is true (or capital-intensive below growth tier), override the verdict downward and record `feasibility_gate`.
 9. Identify `top_strengths` (top 2 dimensions) and `top_weaknesses` (bottom 2 dimensions).
 10. Run RAT identification: list assumptions, score criticality × uncertainty, select the riskiest.
 11. Design RAT experiment with pass/fail threshold.
@@ -254,15 +279,17 @@ Write to `memory/ideas/<slug>/scores.json` (or `pivot_scores.json` for re-scores
     "monetization": 0,
     "distribution": 0,
     "retention": 0,
-    "founder_market_fit": 0
+    "founder_market_fit": 0,
+    "feasibility": 0
   },
   "weights_applied": {
     "demand": 0.20,
     "competition": 0.10,
-    "monetization": 0.20,
-    "distribution": 0.20,
-    "retention": 0.15,
-    "founder_market_fit": 0.15
+    "monetization": 0.18,
+    "distribution": 0.18,
+    "retention": 0.12,
+    "founder_market_fit": 0.12,
+    "feasibility": 0.10
   },
   "floor_penalty": 1.0,
   "base_score": 0,
@@ -278,6 +305,13 @@ Write to `memory/ideas/<slug>/scores.json` (or `pivot_scores.json` for re-scores
     { "dimension": "", "score": 0, "reason": "" }
   ],
   "killer_dimensions": [],
+  "feasibility_gate": {
+    "applied": false,
+    "viability_killer": false,
+    "verdict_before_gate": "",
+    "verdict_after_gate": "",
+    "reason": ""
+  },
   "riskiest_assumption_test": {
     "assumption": "",
     "category": "demand | monetization | distribution | retention | competition | founder_fit",

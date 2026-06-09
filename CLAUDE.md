@@ -30,7 +30,8 @@ Skill adapters live in `.claude/skills/<name>/SKILL.md`. Canonical (full) defini
 
 ### Key skill behaviors to know
 
-- **idea-scoring**: Uses a multiplicative-floor algorithm — one catastrophic weak dimension crushes the final score. Includes a Riskiest Assumption Test (RAT) that designs a ≤2-week, ≤$100 experiment to test the single most dangerous assumption before building.
+- **idea-scoring**: Uses a multiplicative-floor algorithm — one catastrophic weak dimension crushes the final score. Includes Feasibility as a weighted dimension and a **feasibility hard gate** (a `viability_killer` caps the verdict at pivot/drop). Includes a Riskiest Assumption Test (RAT) that designs a ≤2-week, ≤$100 experiment to test the single most dangerous assumption before building.
+- **feasibility-compliance**: Checks whether the idea can actually be built/operated by this founder — data sensitivity & regulatory regime (GDPR/health/financial/public-sector), the hosting model the data forces (public API vs EU-region managed vs self-hosted), infra/capital cost vs budget tier, and gating dependencies (certs, integrations, licenses). Finds the **cheapest compliant path** (don't reflexively assume expensive self-hosting) and flags viability-killers early, before deep market scoring.
 - **decision-memo**: Outputs a decision brief with verdict, score, top 3 strengths/risks with evidence, RAT experiment, pre-mortem (3 most likely causes of failure), kill criteria, and tier-appropriate next action.
 - **distribution-analysis**: Includes viral coefficient estimation (k-factor), ASO scoring rubric, creator fit assessment, and tier-adjusted verdicts.
 - **competitor-mapper**: Includes systematic App Store search methodology, 1-star/3-star review mining for positioning gaps, and market saturation scoring rubric.
@@ -42,7 +43,7 @@ Skill adapters live in `.claude/skills/<name>/SKILL.md`. Canonical (full) defini
 
 - `memory/user_profile.md` — user background, ICP tier (beginner/builder/growth), technical level, strengths, constraints, interview mode, and optionally `selected_interest_domains` (browse mode)
 - `memory/market_insights/<niche>-<platform>-<YYYY>-<MM>.md` — per-niche trend intelligence (one file per niche + platform + period). Used as a calibration input by most skills.
-- `memory/ideas/<idea-slug>/` — per-idea state directory with all skill outputs (idea.md, competitors.json, pricing.json, distribution.json, retention.json, cac.json, market_size.json, desire_scores.json, scores.json, weaknesses.json, pivot_options.json, decision_memo.md)
+- `memory/ideas/<idea-slug>/` — per-idea state directory with all skill outputs (idea.md, competitors.json, pricing.json, distribution.json, retention.json, cac.json, market_size.json, desire_scores.json, feasibility.json, scores.json, weaknesses.json, pivot_options.json, decision_memo.md)
 
 Write all skill outputs to `memory/` as structured JSON or Markdown. See `memory/README.md` for naming conventions. Never delete idea directories — set `status: dropped` in `idea.md` instead.
 
